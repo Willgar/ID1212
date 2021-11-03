@@ -11,7 +11,7 @@ public class Chat {
         int j = 0;
         try {
             while (true) {
-                System.out.println("Waiting for server");
+                System.out.println("Waiting for Client to connect");
                 Socket socket = serverSocket.accept();
                 socketArray[j++] = socket;
                 System.out.println("Connection Receieved with socket: " + socket);
@@ -33,64 +33,49 @@ class ChatServer extends Thread {
     }
     private void sendOutput(String msg) throws IOException {                //Sends output to all open socket connections.
         for(int i=0; i<socketArray.length; i++){
-            socketArray[i].getOutputStream().write(convToByte(msg));;
+            try {
+                PrintWriter writer = new PrintWriter(socketArray[i].getOutputStream());
+                writer.println(msg);
+                writer.flush();
+            } catch(Exception e){};
         }
     }
     public void run(){
         try {
-            InputStream input = socket.getInputStream();
-            socket.setSoTimeout(20000);         //Closes the socket after 20 seconds of inactivity.
-            int byteLen = 0;
-            byte[] inputBuffer = new byte[1024];
-            while(socket != null){              //Reads the inputstreams buffer for messages from the client, converts it to text, and sends it to all other clients.
-                try {                           //This method of reading input and sending output is inspired from previous course work from IK1203, and adapted for ID1212.
-                    byteLen = input.read(inputBuffer);
-                    String msg = convToString(inputBuffer, byteLen);
-                    if(byteLen != -1) {
-                        System.out.println("server:" + msg);
-                        sendOutput(msg);
-                    }
-                } catch (Exception e) {
-                    byteLen = -1;       //Interrupts the loop.
-                }
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            String msg="";
+            while ((msg = buffer.readLine())!= null) {
+                sendOutput(msg);
+                System.out.println("client: " + msg);
             }
             socket.close();
             System.out.println("Closing socket: " + socket);
             return;
         } catch (IOException err){
-            System.out.println(err);
+            System.out.println(socket + " lost connection");
             return;
         }
-
-
     }
-    private static String convToString(byte[] b, int len) throws UnsupportedEncodingException { //Inspired from IK1203 course work
-        return new String(b, 0, len, "UTF-8");
-    }
-    private static byte[] convToByte(String text) throws UnsupportedEncodingException { //Inspired from IK1203 course work
-        return (text).getBytes("UTF-8");
-    }
-
 }
 
 class ChatClient {
     public static void main(String[] args) throws Exception {
         Socket socket = new Socket("localhost", 4321);
-        OutputStream output = socket.getOutputStream();
+        PrintWriter output = new PrintWriter(socket.getOutputStream());
         Scanner scanner = new Scanner(System.in);
         new ChatClientListener(socket).start();
-        String send = scanner.next();
+        System.out.println("Write to other users.\nWrite QUIT to exit.");
+        String send = scanner.nextLine();
         while(!send.equals("QUIT")){
-            System.out.println("sender:" + send);
-            output.write(convToByte(send));
-            send = scanner.next();
+            output.println(send);
+            output.flush();
+            send = scanner.nextLine();
         }
+        output.println(socket + " has left the chat");
+        output.flush();
         socket.close();
         System.out.println("Closing Client");
         System.exit(0);
-    }
-    private static byte[] convToByte(String text) throws UnsupportedEncodingException { //Inspired from IK1203 course work
-        return (text).getBytes("UTF-8");
     }
 }
 
@@ -101,32 +86,17 @@ class ChatClientListener extends Thread {
     }
     public void run(){
         try{
-            InputStream input = socket.getInputStream();
-            StringBuilder sb = new StringBuilder();
-            socket.setSoTimeout(20000);
-            int byteLen = 0;
-            byte[] inputBuffer = new byte[1024];
-            while(socket != null){
-                try {
-                    byteLen = input.read(inputBuffer);
-                    String msg = convToString(inputBuffer, byteLen);
-
-                    if(byteLen != -1) {
-                        System.out.println("listener:" + msg);
-                        sb.append(msg);
-                    }
-                } catch (Exception e) {
-                    byteLen = -1;
-                }
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter writer = new PrintWriter(socket.getOutputStream());
+            String msg="";
+            while ((msg = buffer.readLine())!= null) {
+                System.out.println("client: " + msg);
             }
-
         } catch (Exception err) {
-            System.out.println(err);
+            System.out.println("Client lost connection");
+            System.exit(0);
         }
 
-    }
-    private static String convToString(byte[] b, int len) throws UnsupportedEncodingException { //Inspired from IK1203 course work
-        return new String(b, 0, len, "UTF-8");
     }
 }
 /*
