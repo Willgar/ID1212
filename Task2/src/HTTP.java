@@ -14,18 +14,18 @@ public class HTTP {
             while (true) {
                 System.out.println("Waiting for Client to connect");
                 Socket socket = serverSocket.accept();
-                int guess = getGuess(socket);
-                int cookieID = checkCookie(socket);
+                int[] cookieID = checkRequest(socket);
                 System.out.println("Connection Receieved with socket: " + socket);
-                if(cookieID == 99) {
+                if(servers[cookieID[0]] != null) {
+                    //servers[cookieID].guess(cookieID[1]);
+                    System.out.println("it worked"+ cookieID);
+                } else {
                     System.out.println("test");
                     HTTPServer newServer = new HTTPServer(socket, clientID);
                     servers[clientID] = newServer;
-                    servers[clientID].start();
+                    //servers[clientID].start();
+                    newServer.start();
                     clientID++;
-                } else {
-                    //servers[cookieID].guess(guess);
-                    System.out.println("it worked"+ cookieID);
                 }
             }
         } catch(IOException err) {
@@ -33,7 +33,10 @@ public class HTTP {
         }
     }
 
-    static int checkCookie(Socket socket) throws IOException {
+    static int[] checkRequest(Socket socket) throws IOException {
+        int[] returnArray = new int[2];
+        returnArray[0] = -1;
+        returnArray[1] = -1;
         BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String msg ="";
         while ((msg = buffer.readLine())!= null) {
@@ -41,11 +44,21 @@ public class HTTP {
                 msg = msg.split("=")[1];
                 msg = msg.split(" ")[0];
                 System.out.println(msg);
-                return Integer.parseInt(msg);
+                returnArray[0] = Integer.parseInt(msg);
+            }
+            if(msg.contains("guess")){
+                msg = msg.split("=")[1];
+                msg = msg.split(" ")[0];
+                System.out.println(msg);
+                returnArray[1] = Integer.parseInt(msg);
+            }
+            if(returnArray[0] != -1 && returnArray[1] != -1){
+                return returnArray;
             }
         }
         System.out.println("no cookie");
-        return 99;
+        int[] arr = {-1,-1};
+        return arr;
     }
     static int getGuess(Socket socket) throws IOException {
         BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -80,9 +93,6 @@ class HTTPServer extends Thread {
 
     public void run() {
         PrintWriter output = null;
-        Random rand = new Random();
-        String msg="";
-        boolean flag = true;
         try {
             System.out.println("hello");
             //BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -94,7 +104,7 @@ class HTTPServer extends Thread {
             output.println("<p> Welcome to the guessing game </p>");
             output.println("<p> guess between 1 and 100 </p>");
             output.println("<p> Guess </p>");
-            output.println("<form action=\"\" method=\"get\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"> </label></label>  </form> ");
+            //output.println("<form action=\"\" method=\"get\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"> </label></label>  </form> ");
             output.println();
             output.flush();
             System.out.println("hello2");
