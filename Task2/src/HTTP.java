@@ -1,14 +1,25 @@
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URL;
+import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Random;
+class Client {
+    public static void main(String[] args) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8282/?guess=25"))
+                .header("clientID", "1")
+                .build();
 
-import static java.lang.System.in;
+        HttpResponse<String> response =
+                client.send(request, HttpResponse.BodyHandlers.ofString());
 
+        System.out.println(response.body());
+    }
+}
 public class HTTP {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
         ServerSocket serverSocket = new ServerSocket(8282);
         HTTPServer[] servers = new HTTPServer[100];
         int clientID = 0;
@@ -18,8 +29,8 @@ public class HTTP {
                 Socket socket = serverSocket.accept();
                 int[] cookieID = checkRequest(socket);
                 System.out.println("Connection Receieved with socket: " + socket);
-                if(servers[cookieID[0]] != null && cookieID[0] != 99) {
-                    servers[cookieID[0]].guess(cookieID[1]);
+                if(servers[cookieID[0]] != null && cookieID[0] != 99 && cookieID[1] != -1) {
+                    servers[cookieID[0]].guess(cookieID[1], socket);
                 } else {
                     HTTPServer newServer = new HTTPServer(socket, clientID);
                     servers[clientID] = newServer;
@@ -39,6 +50,7 @@ public class HTTP {
         BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String msg ="";
         while ((msg = buffer.readLine())!= null) {
+            System.out.println(msg);
             if(msg.contains("Accept-Language")){//nice hardcode
                 msg = buffer.readLine();
                 flag2 = true;
@@ -62,20 +74,6 @@ public class HTTP {
         }
         return returnArray;
     }
-    static int getGuess(Socket socket) throws IOException {
-        BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        String msg ="";
-        while ((msg = buffer.readLine())!= null) {
-            if(msg.contains("guess")){
-                msg = msg.split("=")[1];
-                msg = msg.split(" ")[0];
-                System.out.println(msg);
-                return Integer.parseInt(msg);
-            }
-        }
-        System.out.println("no guess");
-        return 0;
-    }
 }
 
 class HTTPServer extends Thread {
@@ -83,7 +81,7 @@ class HTTPServer extends Thread {
     int clientID;
     int correctValue;
     int guesses;
-    PrintWriter output;
+    private int[] doublettes;
 
     public HTTPServer(Socket socket, int clientID) throws IOException {
         this.socket = socket;
@@ -91,7 +89,7 @@ class HTTPServer extends Thread {
         this.guesses = 0;
         Random rand = new Random();
         this.correctValue = rand.nextInt(100);
-
+        doublettes = new int[100];
     }
 
     public void run() {
@@ -101,79 +99,68 @@ class HTTPServer extends Thread {
             e.printStackTrace();
         }
     }
-    public void guess(int guess) throws IOException {
-        if(guess==correctValue){
-            sendWinPage();
-        } else if(guess < correctValue){
-            sendHigherPage();
-        } else{
-            sendLowerPage();
+    public void guess(int guess, Socket socket) throws IOException {
+        if(doublettes[guess]!=1){
+            doublettes[guess]++;
+            guesses++;
+            System.out.println("Guessed: " + guess + "\nCorrect: " + correctValue + "\nGuesses: " + guesses);
+            PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
+            if(guess==correctValue){
+                sendWinPage(output);
+            } else if(guess < correctValue){
+                sendHigherPage(output);
+            } else{
+                sendLowerPage(output);
+            }
         }
     }
     private void sendStartPage() throws IOException {
-        output = new PrintWriter(socket.getOutputStream());
-        output.println("HTTP/1.1 200 OK");
-        output.println("Set-Cookie: clientId=" + clientID + " expires=Wednesday,24-Dec-21 23:59:59 GMT");
-        output.println("Content-Type: text/html");
-        output.println("Connection: closed");
-        output.println("\r\n");
-        output.println("<p> Welcome to the guessing game </p>");
-        output.println("<p> guess between 1 and 100 </p>");
-        output.println("<p> Guess </p>");
-        //output.println("<form action=\"\" method=\"get\"> <label for=\"guess\"> guess number <input onClick=\" window.location.href = \"http://localhost:8282/?guess=\"document.getElementById(\"guess\")\" type=\"text\" id=\"guess\" name=\"guess\"> </label></label>  </form> ");
-        output.println("""
-                <form action="" method="post">
-                    <label for="guess"> guess number 
-                        <input type="text" id="guess" name="guess"> 
-                    </label>
-                </form>
-                """);
-        output.println();
-        output.flush();
+        PrintWriter startup = new PrintWriter(socket.getOutputStream(), true);
+        startup.println("HTTP/1.1 200 OK");
+        startup.println("Set-Cookie: clientId=" + clientID + " expires=Wednesday,24-Dec-21 23:59:59 GMT");
+        startup.println("Content-Type: text/html");
+        startup.println("\r\n");
+        startup.println("<p> Welcome to the guessing game </p>");
+        startup.println("<p> guess between 1 and 100 </p>");
+        startup.println("<form action=\"\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"> </label>  </form> ");
+        startup.println();
+        startup.close();
         System.out.println("Game Started");
     }
-    private void sendWinPage() throws IOException {
-        output = new PrintWriter(socket.getOutputStream());
+    private void sendWinPage(PrintWriter output) {
         output.println("HTTP/1.1 200 OK");
         output.println("Content-Type: text/html");
         output.println("\r\n");
         output.println("<p> You won. You have made " + guesses + " guesses </p>");
-        output.println("<p> Guess </p>");
-        output.println("<form action=\"\" method=\"get\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"> </label></label>  </form> ");
+        output.println("<p> The game has now been reset, play again.</p>");
+        output.println("<form action=\"\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"> </label>  </form> ");
         output.println();
-        output.flush();
+        output.close();
+        Random rand = new Random();
+        correctValue = rand.nextInt(100);
+        doublettes = new int[100];
+        guesses = 0;
         System.out.println("Game Won");
 
     }
-    private void sendHigherPage() throws IOException {
-        output = new PrintWriter(socket.getOutputStream());
+    private void sendHigherPage(PrintWriter output)  {
         output.println("HTTP/1.1 200 OK");
-        output.println("Connection: closed");
         output.println("Content-Type: text/html");
         output.println("\r\n");
-        output.println("<p> Nope, guess higher. You have made " + ++guesses + " guesses so far </p>");
-        output.println("<p> Guess </p>");
-        output.println("<form action=\"\" method=\"get\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"> </label></label>  </form> ");
+        output.println("<p> Nope, guess higher. You have made " + guesses + " guesses so far </p>");
+        output.println("<form action=\"\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"></label>  </form> ");
         output.println();
-        output.flush();
+        output.close();
         System.out.println("Guess Higher");
 
     }
-    private void sendLowerPage() throws IOException {
-        output = new PrintWriter(socket.getOutputStream());
+    private void sendLowerPage(PrintWriter output)  {
         output.println("HTTP/1.1 200 OK");
-        output.println("Connection: closed");
         output.println("Content-Type: text/html");
         output.println("\r\n");
-        output.println("<p> Nope, guess lower. You have made " + ++guesses + " guesses so far </p>");
-        output.println("<p> Guess </p>");
-        output.println("""
-                        <p> Guess </p>
-                       """);
-        output.println("<form action=\"\" method=\"get\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"> </label></label>  </form> ");
+        output.println("<p> Nope, guess lower. You have made " + guesses + " guesses so far </p>");
+        output.println("<form action=\"\"> <label for=\"guess\"> guess number <input type=\"text\" id=\"guess\" name=\"guess\"></label>  </form> ");
         output.println();
-        output.flush();
         System.out.println("Guess Lower");
-
     }
 }
