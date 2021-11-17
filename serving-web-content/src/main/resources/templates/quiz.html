@@ -1,0 +1,20 @@
+
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Getting Started: Serving Web Content</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+<form action="quiz" method="get">
+    <label>Question:</label><br />
+    <p th:text="${a}"/> <input type="checkbox" id="a" name="a"/>
+    <p th:text="${b}"/> <input type="checkbox" id="b" name="b" >
+    <p th:text="${c}"/> <input type="checkbox" id="c" name="c"/>
+    <p th:text="${d}"/> <input type="checkbox" id="d" name="d"/>
+    <br/><br/><input type="submit" value="Start" />
+</form>
+<p th:text="'Hello, ' + ${answer} + ' was '+ ${correct} + '!'" />
+
+</body>
+</html>

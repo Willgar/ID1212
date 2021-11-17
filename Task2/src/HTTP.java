@@ -48,6 +48,8 @@ class Client {
         }
         System.out.println("Average: " +tries/100 + " guesses per match");
     }
+
+
 }
 public class HTTP {
     public static void main(String[] args) throws IOException, URISyntaxException, InterruptedException {
@@ -80,27 +82,31 @@ public class HTTP {
         boolean flag2 = false;
         BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String msg ="";
-        while ((msg = buffer.readLine())!= null) {
-            if(msg.contains("Accept-Language")){//nice hardcode
-                msg = buffer.readLine();
-                flag2 = true;
+        try {
+            while ((msg = buffer.readLine()) != null) {
+                if (msg.contains("Accept-Language")) {
+                    msg = buffer.readLine();
+                    flag2 = true;
+                }
+                if (msg.contains("Cookie")) {
+                    msg = msg.split("=")[1];            //basic regex to get the request
+                    msg = msg.split(" ")[0];
+                    System.out.println("COOKIE: " + msg);
+                    returnArray[0] = Integer.parseInt(msg);
+                }
+                if (msg.contains("guess") && flag) {
+                    msg = msg.split("=")[1];
+                    msg = msg.split(" ")[0];
+                    System.out.println("GUESS: " + msg);
+                    flag = false;
+                    returnArray[1] = Integer.parseInt(msg);
+                }
+                if ((returnArray[0] != 999 && returnArray[1] != -1) || flag2) {
+                    return returnArray;
+                }
             }
-            if(msg.contains("Cookie")){
-                msg = msg.split("=")[1];
-                msg = msg.split(" ")[0];
-                System.out.println("COOKIE: "+ msg);
-                returnArray[0] = Integer.parseInt(msg);
-            }
-            if(msg.contains("guess")&&flag){
-                msg = msg.split("=")[1];
-                msg = msg.split(" ")[0];
-                System.out.println("GUESS: "+ msg);
-                flag=false;
-                returnArray[1] = Integer.parseInt(msg);
-            }
-            if((returnArray[0] != 999 && returnArray[1] != -1) || flag2){
-                return returnArray;
-            }
+        } catch(Exception e){
+            System.out.println(e);
         }
         return returnArray;
     }
