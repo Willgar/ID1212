@@ -50,8 +50,8 @@ public class start extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
-    }
+        processRequest(request, response); 
+   }
 
     /**
      * Handles the HTTP <code>POST</code> method.
