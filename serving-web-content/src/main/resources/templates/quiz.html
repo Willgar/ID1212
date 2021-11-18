@@ -6,15 +6,15 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
-<form action="quiz" method="get">
-    <label>Question:</label><br />
-    <p th:text="${a}"/> <input type="checkbox" id="a" name="a"/>
-    <p th:text="${b}"/> <input type="checkbox" id="b" name="b" >
-    <p th:text="${c}"/> <input type="checkbox" id="c" name="c"/>
-    <p th:text="${d}"/> <input type="checkbox" id="d" name="d"/>
+<form th:action="${url}" method="get">
+    <label th:text="'Question: ' + ${question}"></label><br />
+    <input type="checkbox" id="a" name="a" th:text="${a}"/>
+    <input type="checkbox" id="b" name="b" th:text="${b}">
+    <input type="checkbox" id="c" name="c" th:text="${c}"/>
+    <input type="checkbox" id="d" name="d" th:text="${d}"/>
     <br/><br/><input type="submit" value="Start" />
 </form>
-<p th:text="'Hello, ' + ${answer} + ' was '+ ${correct} + '!'" />
+<p th:text="'You have ' + ${points}" />
 
 </body>
 </html>
