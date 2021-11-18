@@ -6,46 +6,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.sql.SQLException;
 import java.util.Random;
 
 
 @org.springframework.stereotype.Controller
 public class StartController {
-    String array1[] = {"a", "b", "c", "d"};
-
-    String questions[] = {
-            "What comes after 3?",
-            "What is the course code",
-            "What university is this",
-            "What is this framework called",
-            "What comes after b?",
-            "Why is netbeans bad?"
-    };
-    String answers[][] = {
-            {"1", "2","3", "4"},
-            {"DH2642", "ID1206", "ID1212", "IV1350"},
-            {"BTH", "KTH", "LTH", "Chalmers"},
-            {"Spring", "Node.js", "MongoDB", "C++"},
-            {"d", "c", "b", "d"},
-            {"Because it is aids", "Because it is amazing", "Because it is required", "Because it just works" }
-    };
-    String correctOptions[] = {
-            "d",
-            "c",
-            "b",
-            "a",
-            "b",
-            "a"
-    };
-    Quiz quiz = new Quiz();
-
-
-
+    Quiz quiz;
     @GetMapping("/")
-    public String greeting1(Model model) {
-        for (int k = 0; k < questions.length; k++){
-            quiz.addQuestion(answers[k], correctOptions[k], questions[k]);
-        }
+    public String greeting1(Model model) throws SQLException, ClassNotFoundException {
+        quiz = new Quiz();
         return "greeting";
     }
 
