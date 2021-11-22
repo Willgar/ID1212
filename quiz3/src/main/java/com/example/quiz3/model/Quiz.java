@@ -74,7 +74,4 @@ VALUES ("4", "What is this framework called","Spring", "Node.js", "MongoDB", "C+
 
 INSERT INTO questions (idquestions, questionText, ans1,ans2,ans3,ans4,correct)
 VALUES ("5", "What comes after b?", "d", "c", "b", "d", "b");
-
-INSERT INTO questions (idquestions, questionText, ans1,ans2,ans3,ans4,correct)
-VALUES ("6", "Why is netbeans bad?", "Because it is bad", "Because it is amazing", "Because it is required", "Because it just works", "a");
 */
