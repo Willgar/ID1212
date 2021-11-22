@@ -16,10 +16,8 @@ public class SMTP {
     public static void main(String[] args) throws IOException, InterruptedException {
         new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
         //Clears the password argument from terminal
-        String sHost = "smtp.kth.se";
-        String rHost = "webmail.kth.se";
-        int sPort = 587;
-        int rPort = 993;
+        String host = "smtp.kth.se";
+        int port = 587;
         Console console = System.console();
         System.out.println("Enter your KTH mail:");
         String mail = console.readLine();
@@ -36,10 +34,10 @@ public class SMTP {
 
 
         //Creates Connection and encrypts with startTLS
-        Socket socket = new Socket(sHost, sPort);
+        Socket socket = new Socket(host, port);
         pw = new PrintWriter(socket.getOutputStream());
         buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        print("EHLO " + sHost);
+        print("EHLO " + host);
         print("STARTTLS");
 
         //Takes some input from the buffer
@@ -54,7 +52,7 @@ public class SMTP {
         SSLSocket sslSocket = (SSLSocket) ssf.createSocket(socket, socket.getInetAddress().getHostAddress(), socket.getPort(), true);
         pw = new PrintWriter(sslSocket.getOutputStream(), true);
         buffer = new BufferedReader(new InputStreamReader(sslSocket.getInputStream()));
-        print("EHLO " + sHost);
+        print("EHLO " + host);
 
         print("AUTH LOGIN");
         print(user64);
@@ -66,7 +64,7 @@ public class SMTP {
                 System.out.println(buffer.readLine()+"\n"+buffer.readLine());
                 print("MAIL FROM:<"+mail+">");
                 print("RCPT TO:<"+RCPT+">");
-                print("RCPT TO:<"+mail+">");
+                print("RCPT TO:<"+mail+">");//Extra to yourself
                 print("DATA");
                 print2("Date: "+ LocalTime.now());
                 print2("From: SMTP User <"+mail+">");
