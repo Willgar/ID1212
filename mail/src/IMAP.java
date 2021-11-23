@@ -51,13 +51,13 @@ public class IMAP {
             */
     }
     static void openSession() throws IOException {
-        int i = 2;
+        int i = 2;      //last command was a001, so next will start at 2
         String tag = "a";
         console = System.console();
         String command = "";
         boolean flag = true;
         while(!command.contains("logout")){
-            tag = "a"+String.format("%03d", i);
+            tag = "a"+String.format("%03d", i);         //format a00x
             i++;
             System.out.print(tag + " ");
             command = console.readLine();
